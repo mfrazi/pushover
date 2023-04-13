@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 const (
@@ -29,14 +31,16 @@ func New(token string) (*Pushover, error) {
 }
 
 func (p *Pushover) SendMessage(rc RecipientsConfig, mc *MessageConfig) error {
-	req, err := http.NewRequest(http.MethodPost, PushoverMessagesURL, nil)
+	form := url.Values{}
+	form.Add("token", p.token)
+	form.Add("user", rc.UserKey)
+	form.Add("message", mc.Message)
+
+	req, err := http.NewRequest(http.MethodPost, PushoverMessagesURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
-
-	req.PostForm.Add("token", p.token)
-	req.PostForm.Add("user", rc.UserKey)
-	req.PostForm.Add("message", mc.Message)
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
